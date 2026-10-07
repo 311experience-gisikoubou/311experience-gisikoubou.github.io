@@ -1,0 +1,17 @@
+{
+  "name": "こよし技工房",
+  "short_name": "こよし技工房",
+  "description": "義歯見積もり送信",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a3a6b",
+  "theme_color": "#1a5fa8",
+  "icons": [
+    {
+      "src": "icon-send.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

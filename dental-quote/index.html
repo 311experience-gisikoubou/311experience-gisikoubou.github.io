@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; connect-src https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com wss://firestore.googleapis.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'unsafe-inline'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>こよし技工房</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="こよし技工房">
+<link rel="apple-touch-icon" href="icon-send.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Noto Sans JP',sans-serif;background:#F4F6FA;color:#1a2035;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e5e9f2;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;gap:12px}
+.header-logo{font-size:15px;font-weight:700;color:#1a5fa8;letter-spacing:0.03em}
+.header-sub{font-size:11px;color:#8a96b0;margin-top:1px}
+.tab-bar{display:flex;background:#fff;border-bottom:1px solid #e5e9f2;padding:0 20px}
+.tab{font-size:13px;padding:10px 18px;border:none;background:transparent;cursor:pointer;color:#8a96b0;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500}
+.tab.active{color:#1a5fa8;border-bottom-color:#1a5fa8}
+.panel{display:none;padding:16px 20px;max-width:600px;margin:0 auto}
+.panel.active{display:block}
+.card{background:#fff;border:1px solid #e5e9f2;border-radius:12px;padding:16px;margin-bottom:12px}
+.sec-label{font-size:10px;color:#8a96b0;font-weight:700;margin-bottom:10px;letter-spacing:0.08em;text-transform:uppercase}
+select,input[type=text]{font-size:14px;padding:8px 12px;border:1px solid #dde3ef;border-radius:8px;background:#fff;color:#1a2035;width:100%;outline:none}
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.type-btn{font-size:12px;padding:9px 4px;border-radius:8px;cursor:pointer;text-align:center;line-height:1.4;width:100%;transition:all 0.15s;border:1px solid #dde3ef}
+.chk-label{font-size:13px;color:#1a2035;display:flex;align-items:center;gap:8px;cursor:pointer;padding:3px 0}
+.chk-label input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#1a5fa8}
+.divider{border:none;border-top:1px solid #e5e9f2;margin:10px 0}
+.jaw-block{margin-top:10px}
+.jaw-header{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.jaw-title{font-size:11px;font-weight:700;color:#8a96b0;letter-spacing:0.05em}
+.jaw-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:#EBF3FF;color:#1a5fa8;font-weight:600}
+.jaw-rank{font-size:10px;padding:2px 8px;border-radius:10px;background:#FFF3E0;color:#E65100;font-weight:600;margin-left:4px}
+.tooth-nums{display:flex;gap:2px;justify-content:center;margin-bottom:3px}
+.tooth-num{width:32px;text-align:center;font-size:9px;color:#b0b8cc}
+.teeth-row{display:flex;gap:2px;justify-content:center}
+.tooth{width:32px;height:36px;border:1px solid #dde3ef;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#8a96b0;background:#fff;user-select:none;flex-shrink:0;transition:all 0.1s;font-weight:500}
+.tooth:hover{border-color:#1a5fa8;color:#1a5fa8}
+.tooth.missing{background:#dc3545;border-color:#b02a37;color:#fff;font-weight:700}
+.stats-row{display:flex;gap:6px;margin-top:10px}
+.stat-chip{flex:1;background:#F4F6FA;border-radius:8px;padding:8px 6px;text-align:center}
+.stat-chip .sv{font-size:18px;font-weight:700;color:#1a2035}
+.stat-chip .sl{font-size:10px;color:#8a96b0;margin-top:2px}
+.clasp-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.clasp-body{display:none;margin-top:10px}.clasp-body.open{display:block}
+.clasp-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e9f2;border-radius:8px;overflow:hidden}
+.clasp-cell{padding:8px 6px;border-bottom:1px solid #e5e9f2;border-right:1px solid #e5e9f2;display:flex;align-items:center;justify-content:space-between;gap:4px;background:#fff}
+.clasp-cell:nth-child(even){border-right:none}
+.mini-counter{display:flex;align-items:center;gap:3px;flex-shrink:0}
+.cbtn{width:24px;height:24px;border:1px solid #dde3ef;border-radius:5px;background:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:#1a2035;line-height:1}
+.cbtn:hover{background:#F4F6FA;border-color:#1a5fa8}
+.cval{font-size:13px;font-weight:700;min-width:16px;text-align:center;color:#1a5fa8}
+.opt-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e9f2}
+.opt-row:last-child{border-bottom:none}
+.opt-label{font-size:13px;color:#1a2035}
+.opt-label small{display:block;font-size:10px;color:#8a96b0;margin-top:1px}
+.counter{display:flex;align-items:center;gap:5px}
+.counter input[type=number]{width:44px;text-align:center;font-size:14px;font-weight:700;padding:5px 3px;border:1px solid #dde3ef;border-radius:7px;color:#1a5fa8}
+.total-area{background:#fff;border:1px solid #e5e9f2;border-radius:12px;padding:16px;margin-bottom:12px}
+.t-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.t-row .tl{color:#8a96b0}.t-row .tv{color:#1a2035}
+.t-row.grand{margin-top:10px;padding-top:12px;border-top:2px solid #e5e9f2}
+.t-row.grand .tl{font-size:15px;font-weight:700;color:#1a2035}
+.t-row.grand .tv{font-size:26px;font-weight:700;color:#1a5fa8}
+.bd{margin-top:10px;padding:10px 12px;background:#F4F6FA;border-radius:8px}
+.bd-row{display:flex;justify-content:space-between;font-size:11px;color:#8a96b0;padding:2px 0}
+.bd-row span:last-child{color:#1a2035;font-weight:500}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn-print{flex:1;padding:12px;font-size:15px;font-weight:700;border:2px solid #1a5fa8;border-radius:10px;background:#fff;color:#1a5fa8;cursor:pointer;}
+.btn-print:hover{background:#EBF3FF}
+.btn-reset{padding:12px 16px;font-size:14px;font-weight:700;border:1px solid #e5e9f2;border-radius:10px;background:#fff;color:#8a96b0;cursor:pointer;}
+/* 送信ボタン */
+.btn-send{width:100%;padding:14px;font-size:16px;font-weight:700;border:none;border-radius:10px;background:#1a5fa8;color:#fff;cursor:pointer;margin-top:8px;letter-spacing:0.04em}
+.btn-send:hover{background:#154d8c}
+.btn-send:disabled{background:#b0b8cc;cursor:not-allowed}
+/* 管理者モード */
+.admin-banner{background:#1a2035;color:#fff;padding:8px 16px;font-size:12px;text-align:center;letter-spacing:0.05em}
+.inbox-card{background:#fff;border:1px solid #e5e9f2;border-radius:12px;padding:14px;margin-bottom:10px}
+.inbox-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.inbox-clinic{font-size:14px;font-weight:700;color:#1a5fa8}
+.inbox-time{font-size:11px;color:#8a96b0}
+.inbox-patient{font-size:13px;color:#1a2035;margin-bottom:4px}
+.inbox-type{display:inline-block;font-size:11px;padding:2px 8px;border-radius:8px;background:#EBF3FF;color:#1a5fa8;font-weight:600;margin-bottom:6px}
+.inbox-total{font-size:18px;font-weight:700;color:#1a5fa8}
+.inbox-bd{font-size:11px;color:#8a96b0;margin-top:4px;line-height:1.7}
+.inbox-empty{text-align:center;color:#b0b8cc;font-size:13px;padding:40px 0}
+.btn-del-inbox{font-size:11px;color:#dc3545;border:none;background:none;cursor:pointer;padding:2px 6px}
+/* 設定 */
+.btn-save-set{font-size:13px;padding:12px 22px;border:none;border-radius:8px;background:#1a5fa8;color:#fff;cursor:pointer;font-weight:700;margin-bottom:16px;width:100%}
+.saved-ok{font-size:11px;background:#E1F5EE;color:#0F6E56;padding:2px 8px;border-radius:4px;margin-left:8px;display:none}
+.clinic-list-area{margin-top:10px}
+.clinic-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f2f5}
+.clinic-item span{font-size:13px}
+.btn-del-clinic{color:#dc3545;border:none;background:none;font-size:11px;cursor:pointer;padding:4px}
+.add-clinic-row{display:flex;gap:5px;margin-top:10px}
+/* 送信完了トースト */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a2035;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:700;z-index:999;display:none;white-space:nowrap}
+/* モード切替 */
+.mode-toggle{font-size:11px;padding:4px 10px;border:1px solid #dde3ef;border-radius:6px;background:#fff;cursor:pointer;color:#8a96b0}
+/* 受付済みバッジ */
+.status-badge{display:inline-flex;align-items:center;justify-content:center;background:#e53935;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:700;margin-left:4px;vertical-align:middle;animation:badgePop 0.3s ease}
+@keyframes badgePop{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.status-banner{background:linear-gradient(135deg,#1a5fa8,#1976d2);color:#fff;padding:10px 20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;cursor:pointer}
+.status-banner:hover{background:linear-gradient(135deg,#154d8c,#1565c0)}
+/* 確認済みカード */
+.inbox-confirmed{opacity:0.55;border-left:4px solid #43a047!important}
+.badge-confirmed{display:inline-block;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:12px;font-size:11px;padding:2px 8px;font-weight:700;margin-left:6px}
+/* 初回登録オーバーレイ */
+.onboard-overlay{position:fixed;inset:0;background:#F4F6FA;z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px}
+.onboard-box{background:#fff;border:1px solid #e5e9f2;border-radius:16px;padding:32px 24px;max-width:360px;width:100%;text-align:center}
+.onboard-logo{font-size:18px;font-weight:700;color:#1a5fa8;margin-bottom:4px}
+.onboard-sub{font-size:12px;color:#8a96b0;margin-bottom:28px}
+.onboard-label{font-size:13px;font-weight:700;color:#1a2035;text-align:left;margin-bottom:8px;display:block}
+.onboard-input{font-size:16px;padding:12px 14px;border:1.5px solid #dde3ef;border-radius:10px;width:100%;outline:none;margin-bottom:20px}
+.onboard-input:focus{border-color:#1a5fa8}
+.onboard-btn{width:100%;padding:14px;font-size:16px;font-weight:700;border:none;border-radius:10px;background:#1a5fa8;color:#fff;cursor:pointer;letter-spacing:0.04em}
+.onboard-btn:hover{background:#154d8c}
+.onboard-note{font-size:11px;color:#b0b8cc;margin-top:16px;line-height:1.6}
+@media print{
+  .tab-bar,.btn-row,.btn-save-set,.header,.btn-send,.admin-banner{display:none!important}
+  #panel-settings{display:none!important}
+  body{background:#fff}
+  .panel{display:block!important;padding:10px}
+  .card,.total-area{border:1px solid #ccc;page-break-inside:avoid}
+  .print-header{display:block!important}
+}
+.print-header{display:none;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #1a5fa8}
+.print-header h1{font-size:18px;color:#1a5fa8;font-weight:700}
+.print-header p{font-size:12px;color:#8a96b0;margin-top:2px}
+
+/* === CANONICAL UI: iPad landscape v0.6 === */
+:root{
+  --v06-page:#F7F7F4;--v06-card:#FFFFFF;--v06-border:#D9DFE5;--v06-text:#132331;
+  --v06-muted:#6F7C86;--v06-blue:#528BC8;--v06-blue-dark:#3578BE;--v06-selected:#E9F4FD;
+  --v06-row:#F6F7F9;--v06-warm:#F7F1E7;--v06-cool:#EDF5FA;--v06-missing:#C85A5A;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;background:var(--v06-page);color:var(--v06-text)}
+.app-header{width:calc(100% - 36px);max-width:988px;height:58px;margin:13px auto 0;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-mark{width:52px;height:52px;border-radius:14px;background:linear-gradient(145deg,#77A5D0,#4C82B5);display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 2px 8px rgba(35,80,120,.12)}
+.header-logo{font-size:22px;line-height:1.1;font-weight:700;color:var(--v06-text);letter-spacing:0}
+.header-sub{font-size:11px;color:var(--v06-muted);margin-top:5px}
+.tab-bar{border:0;padding:0;gap:8px;background:transparent;align-items:center}
+.tab{font-size:15px;padding:11px 20px;border:0;border-radius:12px;color:#566170;background:transparent;font-weight:600;margin:0}
+.tab.active{color:#0E5D9C;border:1px solid var(--v06-border);background:#fff;box-shadow:0 3px 10px rgba(34,54,72,.08)}
+.panel{padding:0;max-width:988px;margin:8px auto 0}
+.quote-shell{width:100%}
+.quote-columns{height:545px;display:grid;grid-template-columns:minmax(0,541fr) minmax(0,440fr);gap:7px}
+.quote-col-left{display:grid;grid-template-rows:203px 123px 202px;gap:10px}
+.quote-col-left .jaw-card{margin-top:-3px}
+.quote-col-right{display:grid;grid-template-rows:202px 166px 159px;gap:10px}
+.quote-col-right .summary-card{margin-top:-2px}
+.quote-shell .card,.quote-shell .total-area{background:var(--v06-card);border:1px solid var(--v06-border);border-radius:14px;padding:14px;margin:0;min-width:0;overflow:hidden}
+.quote-shell .sec-label{font-size:17px;color:var(--v06-text);font-weight:700;margin:0 0 11px;letter-spacing:0;text-transform:none;display:flex;align-items:center;gap:10px;line-height:1.2}
+.quote-shell .sec-label::before{content:"";width:30px;height:30px;border-radius:50%;background:#EAF3F8;flex:0 0 30px}
+.clinic-stack{display:grid;gap:8px}
+.clinic-inline{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quote-shell select,.quote-shell input[type=text]{height:46px;font-size:15px;padding:0 12px;border:1px solid var(--v06-border);border-radius:9px;color:var(--v06-text)}
+.clinic-note{font-size:11px;color:var(--v06-muted);line-height:1.35}
+.additional-card .sec-label{margin-bottom:9px}
+.additional-list{display:grid;gap:7px}
+.additional-list .chk-label{height:40px;padding:0 12px;border-radius:9px;background:var(--v06-row);font-size:14px;font-weight:600}
+.additional-list .chk-label input[type=checkbox]{width:20px;height:20px;accent-color:var(--v06-blue)}
+.type-card .sec-label{margin-bottom:9px}
+.type-grid{grid-template-columns:repeat(3,1fr);gap:8px;margin:0}
+.type-btn{height:55px;font-size:15px;font-weight:700;padding:0 6px;border:1px solid var(--v06-border);border-radius:10px;background:#fff;color:var(--v06-text);line-height:1.25}
+.type-btn:hover{border-color:var(--v06-blue)}
+.jaw-card{position:relative}
+.jaw-card .sec-label{margin-bottom:7px}
+.jaw-head-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.two-bed-row{display:flex;gap:8px;align-items:center;min-height:28px}
+.two-bed-row .chk-label{font-size:11px;padding:4px 8px;background:var(--v06-warm);border-radius:9px}
+.two-bed-row .chk-label span{color:#6E6256!important}
+.jaw-selector{display:grid;grid-template-columns:1fr 1fr;background:#EEF1F4;border-radius:10px;padding:3px;margin-bottom:5px}
+.jaw-selector label{position:relative;cursor:pointer}
+.jaw-selector input{position:absolute;opacity:0;pointer-events:none}
+.jaw-selector span{height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#64717E}
+.jaw-selector input:checked+span{background:#DCEEFE;color:#1264A0}
+.jaw-block{margin-top:0}
+.jaw-header{margin:0 0 2px;gap:6px}
+.jaw-title{font-size:11px;color:var(--v06-muted)}
+.jaw-badge{font-size:10px;padding:2px 7px;background:#EDF4F8;color:#4F6B80}
+.tooth-nums{gap:1.5px;margin-bottom:1px}
+.tooth-num{width:24px;font-size:8px;color:#98A3AD;line-height:10px}
+.teeth-row{gap:1.5px}
+.tooth{width:24px;height:28px;border-color:var(--v06-border);border-radius:5px;font-size:10px;color:#65727E;background:#fff}
+.tooth:nth-child(8),.tooth-num:nth-child(8){margin-right:5px}
+.tooth.missing{background:var(--v06-missing);border-color:var(--v06-missing);color:#fff}
+.stats-row{gap:8px;margin-top:5px}
+.stat-chip{height:55px;border-radius:10px;padding:5px 6px;background:var(--v06-cool);display:flex;flex-direction:column;justify-content:center}
+.stat-chip:first-child{background:var(--v06-warm)}
+.stat-chip .sv{font-size:20px;color:var(--v06-text);line-height:1}
+.stat-chip .sl{font-size:10px;color:var(--v06-muted);margin-top:3px}
+.clasp-card{position:relative;overflow:visible!important;padding:12px 14px!important}
+.clasp-toggle{height:36px}
+.clasp-toggle .clasp-title{font-size:17px!important;color:var(--v06-text)!important}
+.clasp-arrow{font-size:14px;color:#8C99A5}
+.clasp-card .divider{margin:4px 0 0}
+.opt-row{height:49px;padding:0;border-color:#E9EDF0}
+.opt-label{font-size:15px;font-weight:600}
+.counter{gap:7px}
+.counter input[type=number]{width:30px;border:0;padding:0;background:transparent;font-size:15px}
+.cbtn{width:38px;height:38px;border:0;border-radius:10px;background:#F3F5F7;color:#657689;font-size:22px}
+.mini-counter .cbtn{width:28px;height:28px;font-size:16px}
+.clasp-body.open{display:block;position:absolute;z-index:50;left:12px;right:12px;top:48px;max-height:106px;overflow-y:auto;padding:6px;background:#fff;border:1px solid var(--v06-border);border-radius:10px;box-shadow:0 8px 20px rgba(40,55,70,.14)}
+.clasp-grid{grid-template-columns:1fr 1fr;border-color:var(--v06-border)}
+.clasp-cell{padding:6px;border-color:var(--v06-border)}
+.summary-card{padding:14px!important}
+.t-row{font-size:14px;padding:3px 2px}
+.t-row .tl{color:#5E7080}.t-row .tv{color:var(--v06-text)}
+.t-row.grand{height:68px;margin-top:7px;padding:0 13px;border:0;border-radius:12px;background:linear-gradient(90deg,#F1F8FD,#E2F2FD);display:flex;align-items:center}
+.t-row.grand .tl{font-size:18px;color:var(--v06-text)}
+.t-row.grand .tv{font-size:30px;color:var(--v06-blue-dark)}
+.bd{display:none!important}
+.bottom-actions{height:69px;margin-top:9px;padding:7px;border:1px solid var(--v06-border);border-radius:14px;background:#fff;display:grid;grid-template-columns:439fr 52fr 467fr;gap:7px}
+.bottom-actions .btn-print,.bottom-actions .btn-reset,.bottom-actions .btn-send{height:54px;margin:0;border-radius:10px;font-weight:700;cursor:pointer}
+.bottom-actions .btn-print{padding:0;font-size:16px;border:2px solid #2E86D7;background:#fff;color:#1264A0}
+.bottom-actions .btn-reset{padding:0;font-size:18px;border:1px solid var(--v06-border);background:#F6F8FA;color:#748494}
+.bottom-actions .btn-send{padding:0;font-size:16px;border:0;background:linear-gradient(135deg,#6298D1,#3C7FC4);color:#fff;letter-spacing:0}
+.bottom-actions .btn-send:disabled{background:#AEBCC9}
+#panel-settings{padding:0 18px 18px;max-width:988px}
+@media(max-width:820px) and (orientation:portrait){
+  .app-header{width:calc(100% - 24px);margin-top:8px}
+  .panel{width:calc(100% - 24px)}
+  .quote-columns{height:auto;grid-template-columns:1fr}
+  .quote-col-left,.quote-col-right{display:flex;flex-direction:column}
+  .quote-shell .card,.quote-shell .total-area{min-height:auto}
+  .bottom-actions{grid-template-columns:1fr 52px 1fr}
+}
+@media print{
+  .app-header,.bottom-actions{display:none!important}
+  .quote-columns{height:auto;display:block}
+  .quote-shell .card,.quote-shell .total-area{margin-bottom:8px}
+}
+
+
+/* === iPad landscape fill-screen candidate v0.6.1 ===
+   Human-directed delta from canonical v0.6: use the available iPad landscape viewport more fully.
+   Functional logic remains frozen. */
+@media screen and (orientation:landscape) and (min-width:900px){
+  .app-header{
+    width:calc(100% - 28px);
+    max-width:none;
+    height:72px;
+    margin:8px 14px 0;
+  }
+  .brand{gap:14px}
+  .brand-mark{width:58px;height:58px;border-radius:15px;font-size:32px}
+  .header-logo{font-size:26px}
+  .header-sub{font-size:13px;margin-top:5px}
+  .tab-bar{gap:10px}
+  .tab{font-size:17px;padding:13px 24px;border-radius:13px}
+
+  .panel{
+    width:calc(100% - 28px);
+    max-width:none;
+    margin:7px 14px 0;
+  }
+  .quote-columns{
+    height:clamp(533px,calc(100vh - 180px),760px);
+    grid-template-columns:minmax(0,55.2fr) minmax(0,44.8fr);
+    gap:10px;
+  }
+  .quote-col-left{
+    grid-template-rows:minmax(0,38fr) minmax(0,23fr) minmax(0,39fr);
+    gap:10px;
+  }
+  .quote-col-left .jaw-card{margin-top:0}
+  .quote-col-right{
+    grid-template-rows:minmax(0,38fr) minmax(0,32fr) minmax(0,30fr);
+    gap:10px;
+  }
+  .quote-col-right .summary-card{margin-top:0}
+
+  .quote-shell .card,.quote-shell .total-area{
+    border-radius:16px;
+    padding:18px;
+  }
+  .quote-shell .sec-label{
+    font-size:20px;
+    margin-bottom:13px;
+    gap:12px;
+  }
+  .quote-shell .sec-label::before{
+    width:34px;height:34px;flex-basis:34px;
+  }
+  .clinic-stack{gap:10px}
+  .clinic-inline{gap:10px}
+  .quote-shell select,.quote-shell input[type=text]{
+    height:52px;
+    font-size:17px;
+    padding:0 14px;
+    border-radius:11px;
+  }
+  .clinic-note{font-size:12px;line-height:1.4}
+
+  .additional-list{gap:9px}
+  .additional-list .chk-label{
+    height:46px;
+    padding:0 14px;
+    border-radius:11px;
+    font-size:16px;
+  }
+  .additional-list .chk-label input[type=checkbox]{width:22px;height:22px}
+
+  .type-grid{gap:10px}
+  .type-btn{
+    height:62px;
+    font-size:17px;
+    border-radius:12px;
+  }
+
+  .jaw-head-row{gap:12px}
+  .two-bed-row .chk-label{font-size:12px;padding:5px 10px}
+  .jaw-selector{border-radius:11px;padding:4px;margin-bottom:7px}
+  .jaw-selector span{height:44px;border-radius:9px;font-size:17px}
+  .jaw-title{font-size:12px}
+  .jaw-badge{font-size:11px;padding:3px 8px}
+  .tooth-nums{gap:2px}
+  .tooth-num{width:28px;font-size:9px}
+  .teeth-row{gap:2px}
+  .tooth{width:28px;height:32px;font-size:11px}
+  .tooth:nth-child(8),.tooth-num:nth-child(8){margin-right:6px}
+  .stats-row{gap:10px;margin-top:7px}
+  .stat-chip{height:64px;border-radius:12px}
+  .stat-chip .sv{font-size:23px}
+  .stat-chip .sl{font-size:11px}
+
+  .clasp-card{padding:15px 18px!important}
+  .clasp-toggle{height:42px}
+  .clasp-toggle .clasp-title{font-size:20px!important}
+  .clasp-arrow{font-size:16px}
+  .clasp-card .divider{margin:5px 0 0}
+  .opt-row{height:58px}
+  .opt-label{font-size:17px}
+  .counter{gap:9px}
+  .counter input[type=number]{width:34px;font-size:17px}
+  .cbtn{width:42px;height:42px;border-radius:11px;font-size:24px}
+  .clasp-body.open{
+    left:15px;right:15px;top:57px;
+    max-height:min(190px,30vh);
+  }
+
+  .summary-card{padding:18px!important}
+  .t-row{font-size:16px;padding:5px 3px}
+  .t-row.grand{
+    height:78px;
+    margin-top:9px;
+    padding:0 16px;
+    border-radius:13px;
+  }
+  .t-row.grand .tl{font-size:21px}
+  .t-row.grand .tv{font-size:36px}
+
+  .bottom-actions{
+    height:76px;
+    margin-top:10px;
+    padding:8px;
+    border-radius:16px;
+    grid-template-columns:minmax(0,439fr) 58px minmax(0,467fr);
+    gap:8px;
+  }
+  .bottom-actions .btn-print,
+  .bottom-actions .btn-reset,
+  .bottom-actions .btn-send{
+    height:60px;
+    border-radius:11px;
+  }
+  .bottom-actions .btn-print{font-size:18px}
+  .bottom-actions .btn-reset{font-size:20px}
+  .bottom-actions .btn-send{font-size:18px}
+}
+
+</style>
+</head>
+<body>
+
+<!-- 初回登録オーバーレイ -->
+<div id="onboard-overlay" class="onboard-overlay" style="display:none">
+  <div class="onboard-box">
+    <div class="onboard-logo">🦷 こよし技工房</div>
+    <div class="onboard-sub">義歯見積もりシステム</div>
+    <label class="onboard-label" for="onboard-clinic">医院名を入力してください</label>
+    <input type="text" id="onboard-clinic" class="onboard-input" placeholder="例：山田歯科クリニック" maxlength="30">
+    <button class="onboard-btn" onclick="registerClinic()">登録して始める</button>
+    <div class="onboard-note">登録した医院名は見積もり送信時に使用されます。<br>後から設定タブで変更できます。</div>
+  </div>
+</div>
+
+<div class="app-header">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">🦷</div>
+    <div>
+      <div class="header-logo">こよし技工房</div>
+      <div class="header-sub">義歯見積もりシステム</div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('quote',this)">見積もり</button>
+    <button class="tab" onclick="switchTab('settings',this)">設定</button>
+  </div>
+</div>
+
+<div id="panel-quote" class="panel active">
+  <div class="print-header">
+    <h1>義歯製作見積書</h1>
+    <p id="print-date"></p>
+  </div>
+
+  <div class="quote-shell">
+    <div class="quote-columns">
+      <div class="quote-col-left">
+        <section class="card clinic-card">
+          <div class="sec-label">医院・患者</div>
+          <div class="clinic-stack">
+            <select id="clinicSel"></select>
+            <div class="clinic-inline">
+              <input type="text" id="patientName" placeholder="患者名（任意）">
+              <input type="text" id="caseNumber" maxlength="40" placeholder="ケース番号（任意）">
+            </div>
+            <div class="clinic-note">患者氏名はこの端末内の表示・印刷用です。クラウド送信データには含めません。</div>
+            <div class="clinic-note">見積番号：<strong id="quote-ref">準備中</strong>　<span id="quote-version"></span></div>
+          </div>
+        </section>
+
+        <section class="card type-card">
+          <div class="sec-label">義歯タイプ</div>
+          <div class="type-grid" id="type-grid">
+            <button id="btn-nonclasp" class="type-btn" onclick="setType('nonclasp')">ノンクラスプ</button>
+            <button id="btn-metal_nonclasp" class="type-btn" onclick="setType('metal_nonclasp')">金属床<br>ノンクラスプ</button>
+            <button id="btn-metal" class="type-btn" onclick="setType('metal')">金属床</button>
+          </div>
+        </section>
+
+        <section class="card jaw-card">
+          <div class="jaw-head-row">
+            <div class="sec-label">製作する顎・歯式</div>
+            <div class="two-bed-row">
+              <label class="chk-label" id="row-twobed-upper" style="display:none">
+                <input type="checkbox" id="chk-twobed-upper" onchange="calc()">
+                <span>上顎 1顎2床</span>
+              </label>
+              <label class="chk-label" id="row-twobed-lower" style="display:none">
+                <input type="checkbox" id="chk-twobed-lower" onchange="calc()">
+                <span>下顎 1顎2床</span>
+              </label>
+            </div>
+          </div>
+          <div class="jaw-selector">
+            <label><input type="checkbox" id="chk-upper" checked onchange="onJawChange()"><span>上顎</span></label>
+            <label><input type="checkbox" id="chk-lower" onchange="onJawChange()"><span>下顎</span></label>
+          </div>
+          <div id="no-jaw-msg" style="display:none;font-size:13px;color:#6F7C86;text-align:center;padding:10px">顎を選択してください</div>
+          <div id="jaw-upper-block" class="jaw-block">
+            <div class="jaw-header">
+              <span class="jaw-title">上顎</span>
+              <span class="jaw-badge" id="upper-badge">欠損 0歯</span>
+              <span class="jaw-rank" id="upper-rank" style="display:none"></span>
+            </div>
+            <div class="tooth-nums" id="upper-nums"></div>
+            <div class="teeth-row" id="upper-jaw"></div>
+          </div>
+          <div id="jaw-lower-block" class="jaw-block" style="display:none">
+            <div class="jaw-header">
+              <span class="jaw-title">下顎</span>
+              <span class="jaw-badge" id="lower-badge">欠損 0歯</span>
+              <span class="jaw-rank" id="lower-rank" style="display:none"></span>
+            </div>
+            <div class="teeth-row" id="lower-jaw"></div>
+            <div class="tooth-nums" id="lower-nums"></div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-chip"><div class="sv" id="stat-missing">0</div><div class="sl">欠損歯数</div></div>
+            <div class="stat-chip"><div class="sv" id="stat-remain">14</div><div class="sl">残存歯数</div></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="quote-col-right">
+        <section class="card additional-card">
+          <div class="sec-label">追加項目</div>
+          <div class="additional-list">
+            <label class="chk-label"><input type="checkbox" id="chk-koki" onchange="calc()"> 後提維持を追加</label>
+            <label class="chk-label"><input type="checkbox" id="chk-resin" onchange="calc()"> 軟性レジン追加</label>
+            <label class="chk-label" id="row-thermo" style="display:none"><input type="checkbox" id="chk-thermo" onchange="calc()"> サーモセンス2度打ち（2色）</label>
+          </div>
+        </section>
+
+        <section class="card clasp-card">
+          <div class="clasp-toggle" onclick="toggleClasp()">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="clasp-title" style="font-size:14px;font-weight:700;color:#1a2035">クラスプ</span>
+              <span id="clasp-summary" style="font-size:11px;color:#6F7C86">（未選択）</span>
+            </div>
+            <span class="clasp-arrow">▶</span>
+          </div>
+          <div class="clasp-body" id="clasp-body">
+            <div class="clasp-grid" id="clasp-grid"></div>
+          </div>
+          <div class="divider"></div>
+          <div class="opt-row">
+            <div class="opt-label">レスト</div>
+            <div class="counter">
+              <button class="cbtn" onclick="adjOpt('rest',-1)">−</button>
+              <input type="number" id="opt-rest" value="0" min="0" max="20" onchange="calc()">
+              <button class="cbtn" onclick="adjOpt('rest',1)">＋</button>
+            </div>
+          </div>
+          <div class="opt-row">
+            <div class="opt-label">メタルアップ</div>
+            <div class="counter" id="metalup-manual">
+              <button class="cbtn" onclick="adjOpt('metalup',-1)">−</button>
+              <input type="number" id="opt-metalup" value="0" min="0" max="28" onchange="calc()">
+              <button class="cbtn" onclick="adjOpt('metalup',1)">＋</button>
+            </div>
+            <div id="metalup-auto" style="display:none;font-size:13px;font-weight:700;color:#3578BE"></div>
+          </div>
+        </section>
+
+        <section class="total-area summary-card">
+          <div class="t-row"><span class="tl">小計（税抜）</span><span class="tv" id="subtotal">¥0</span></div>
+          <div class="t-row"><span class="tl">消費税（10%）</span><span class="tv" id="tax">¥0</span></div>
+          <div class="t-row grand"><span class="tl">合計金額</span><span class="tv" id="grand">¥0</span></div>
+          <div class="bd" id="breakdown"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="bottom-actions">
+      <button class="btn-print" onclick="doPrint()">🖨️ 印刷・PDF</button>
+      <button class="btn-reset" onclick="doReset()">↻</button>
+      <button class="btn-send" id="btn-send" onclick="handleSend()" disabled>☁️ 接続確認中</button>
+    </div>
+  </div>
+</div>
+
+<!-- 受信箱（管理者のみ） -->
+<div id="panel-settings" class="panel">
+  <div class="card">
+    <div class="sec-label">医院リストの編集</div>
+    <div style="font-size:11px;color:#8a96b0;margin-bottom:12px;">医院名を追加して「保存」してください。</div>
+    <div class="clinic-list-area" id="clinic-list-edit"></div>
+    <div class="add-clinic-row">
+      <input type="text" id="new-clinic-name" placeholder="新しい医院名">
+      <button class="cbtn" style="width:auto;padding:0 12px;font-size:12px" onclick="addClinic()">追加</button>
+    </div>
+  </div>
+  <button class="btn-save-set" onclick="saveClinicSettings()">設定を保存 <span class="saved-ok" id="saved-ok">✓ 保存完了</span></button>
+  <div style="text-align:center;font-size:10px;color:#b0b8cc;margin-top:20px;">料金設定はこよし技工房の標準価格で固定されています。</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="quote-relay-core.js"></script>
+<script src="quote-relay-transport.js"></script>
+<script>
+/* --- 料金設定 --- */
+const prices = {arttooth:100, koki:2000, resin:20000, thermo:5000, rest:2000, metalup:1000};
+const NONCLASP_TIERS = [
+  {label:'1〜3歯',min:1,max:3,haretsu:2000,shiage:28000},
+  {label:'4〜7歯',min:4,max:7,haretsu:3000,shiage:33000},
+  {label:'8〜14歯',min:8,max:14,haretsu:5000,shiage:35000},
+];
+const METAL_TIERS = [
+  {label:'1〜4歯', min:1, max:4,  haretsu:1000, shiage:8000},
+  {label:'5〜8歯', min:5, max:8,  haretsu:2000, shiage:10000},
+  {label:'9〜11歯',min:9, max:11, haretsu:3000, shiage:12000},
+  {label:'12〜14歯',min:12,max:14,haretsu:4000, shiage:14000},
+  {label:'総義歯', min:15,max:28, haretsu:5000, shiage:25000},
+];
+const metalPrices = {partial:28000, full:30000};
+const CLASP_DATA = [
+  [{name:'キャスト鉤',price:3000},{name:'ワイヤー鉤',price:3000}],
+  [{name:'双子鉤',price:4000},{name:'ワイヤー双歯鉤',price:4000}],
+  [{name:'ローチIバー鉤',price:4000},{name:'PGAワイヤー鉤',price:3500}],
+  [{name:'ローチTバー鉤',price:4000},{name:'PGAワイヤー双歯鉤',price:4500}],
+  [{name:'コンビネーション鉤',price:3500},{name:'補強床',price:8000}],
+  [{name:'リング鉤',price:4000},{name:'メタルアップ(1歯)',price:1000}],
+  [{name:'バックアクション鉤',price:4000},{name:'レスト・フック',price:2000}],
+  [{name:'ヘアピン鉤',price:4000},{name:'',price:0}],
+];
+
+/* --- 状態 --- */
+let currentType='nonclasp';
+let claspCounts={};
+let missingUpper=new Set();
+let missingLower=new Set();
+let clinics=[];
+let lastSubtotal=0;
+let lastTax=0;
+let lastTotal=0;
+let lastMetalupCount=0;
+let lastBreakdown=[];
+let cloudTransport=null;
+let sendLocked=false;
+const quoteMeta=window.QuoteRelayCore.loadOrCreateQuoteMeta(sessionStorage);
+function renderQuoteMeta(){
+  document.getElementById('quote-ref').textContent=quoteMeta.quoteRef;
+  document.getElementById('quote-version').textContent='v'+quoteMeta.version;
+}
+
+/* --- 管理者モード --- */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display='block';
+  setTimeout(()=>{ t.style.display='none'; }, 3000);
+}
+
+/* --- 医院リスト --- */
+function loadClinicData(){
+  const saved = localStorage.getItem('denture_quote_clinic_list');
+  if(saved){ clinics=JSON.parse(saved); }
+  // 初回起動判定：医院リストが空なら登録画面を表示
+  if(clinics.length===0){
+    document.getElementById('onboard-overlay').style.display='flex';
+    setTimeout(()=>document.getElementById('onboard-clinic').focus(),100);
+  }
+  renderClinics();
+}
+function registerClinic(){
+  const inp=document.getElementById('onboard-clinic');
+  const name=inp.value.trim();
+  if(!name){ inp.focus(); inp.style.borderColor='#dc3545'; return; }
+  inp.style.borderColor='';
+  clinics.push(name);
+  localStorage.setItem('denture_quote_clinic_list', JSON.stringify(clinics));
+  renderClinics();
+  // 登録した医院を自動選択
+  const sel=document.getElementById('clinicSel');
+  for(let i=0;i<sel.options.length;i++){ if(sel.options[i].text===name){ sel.selectedIndex=i; break; } }
+  // オーバーレイを閉じてトーストを表示
+  document.getElementById('onboard-overlay').style.display='none';
+  showToast('✅ 登録完了！ようこそ、'+name+'さん');
+  // Firebase準備済みならすぐにステータスリスナーを開始
+
+}
+function saveClinicSettings(){
+  localStorage.setItem('denture_quote_clinic_list', JSON.stringify(clinics));
+  const ok=document.getElementById('saved-ok'); ok.style.display='inline';
+  setTimeout(()=>ok.style.display='none',2000);
+}
+function renderClinics(){
+  const sel=document.getElementById('clinicSel');
+  sel.innerHTML='<option value="">医院を選択</option>';
+  clinics.forEach(name=>{ const opt=document.createElement('option'); opt.textContent=name; sel.appendChild(opt); });
+  const editList=document.getElementById('clinic-list-edit'); editList.innerHTML='';
+  clinics.forEach((name,idx)=>{ const div=document.createElement('div'); div.className='clinic-item'; div.innerHTML=`<span>${name}</span><button class="btn-del-clinic" onclick="removeClinic(${idx})">削除</button>`; editList.appendChild(div); });
+}
+function addClinic(){ const inp=document.getElementById('new-clinic-name'); if(inp.value.trim()){ clinics.push(inp.value.trim()); inp.value=''; renderClinics(); } }
+function removeClinic(idx){ if(confirm('削除しますか？')){ clinics.splice(idx,1); renderClinics(); } }
+
+/* --- タブ --- */
+function switchTab(n,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+n).classList.add('active');
+}
+
+/* --- 歯式 --- */
+function onJawChange(){
+  const useU=document.getElementById('chk-upper').checked, useL=document.getElementById('chk-lower').checked;
+  document.getElementById('jaw-upper-block').style.display=useU?'':'none';
+  document.getElementById('jaw-lower-block').style.display=useL?'':'none';
+  document.getElementById('no-jaw-msg').style.display=(!useU&&!useL)?'block':'none';
+  // 1顎2床チェックボックスの表示制御
+  document.getElementById('row-twobed-upper').style.display=useU?'':'none';
+  document.getElementById('row-twobed-lower').style.display=useL?'':'none';
+  if(!useU){ missingUpper.clear(); document.getElementById('chk-twobed-upper').checked=false; }
+  if(!useL){ missingLower.clear(); document.getElementById('chk-twobed-lower').checked=false; }
+  buildJaw('upper-jaw','upper-nums',true); buildJaw('lower-jaw','lower-nums',false);
+  calc();
+}
+function buildJaw(rowId,numId,isUpper){
+  const row=document.getElementById(rowId), numRow=document.getElementById(numId);
+  if(!row||!numRow)return; row.innerHTML=''; numRow.innerHTML='';
+  const nums=[8,7,6,5,4,3,2,1,1,2,3,4,5,6,7,8];
+  const mSet=isUpper?missingUpper:missingLower;
+  nums.forEach(n=>{ const d=document.createElement('div'); d.className='tooth-num'; d.textContent=n; numRow.appendChild(d); });
+  nums.forEach((n,i)=>{
+    const t=document.createElement('div'); t.className='tooth'+(mSet.has(i)?' missing':''); t.textContent=n;
+    t.onclick=()=>{ if(mSet.has(i)) mSet.delete(i); else mSet.add(i); document.getElementById(isUpper?'upper-badge':'lower-badge').textContent=`欠損 ${mSet.size}歯`; calc(); t.classList.toggle('missing'); };
+    row.appendChild(t);
+  });
+}
+
+/* --- 計算 --- */
+function setType(key){
+  currentType=key;
+  document.querySelectorAll('.type-btn').forEach(b=>b.style.background='#fff');
+  document.getElementById('btn-'+key).style.background='#EBF3FF';
+  document.getElementById('row-thermo').style.display=(key==='nonclasp')?'':'none';
+  calc();
+}
+function fmt(n){ return '¥'+Math.round(n).toLocaleString(); }
+function getTier(missingCount){
+  if(currentType==='nonclasp') return NONCLASP_TIERS.find(t=>missingCount>=t.min&&missingCount<=t.max)||null;
+  if(currentType==='metal_nonclasp'){ const tier=NONCLASP_TIERS.find(t=>missingCount>=t.min&&missingCount<=t.max)||null; return tier?{...tier,isMetalNonclasp:true,mnIsFull:(missingCount===14)}:null; }
+  const isFull=(missingCount===14);
+  const metalTier=isFull?METAL_TIERS.find(t=>t.min===15)||null:METAL_TIERS.find(t=>missingCount>=t.min&&missingCount<=t.max)||null;
+  return {isMetalCombined:true,flatPrice:isFull?metalPrices.full:metalPrices.partial,flatLabel:isFull?'総義歯':'パーシャル',metalTier};
+}
+function calc(){
+  const useU=document.getElementById('chk-upper').checked, useL=document.getElementById('chk-lower').checked;
+  const twobedU=useU&&document.getElementById('chk-twobed-upper').checked;
+  const twobedL=useL&&document.getElementById('chk-twobed-lower').checked;
+  const missingU=useU?missingUpper.size:0, missingL=useL?missingLower.size:0;
+  const totalMissing=missingU+missingL;
+  document.getElementById('stat-missing').textContent=totalMissing;
+  document.getElementById('stat-remain').textContent=(useU?14:0)+(useL?14:0)-totalMissing;
+  let sub=0, bd=[];
+  const artPrice=totalMissing*prices.arttooth;
+  if(artPrice>0){sub+=artPrice;bd.push({l:`人工歯代（${totalMissing}歯）`,p:fmt(artPrice)});}
+  if(document.getElementById('chk-koki').checked){sub+=prices.koki;bd.push({l:'後提維持',p:fmt(prices.koki)});}
+  if(document.getElementById('chk-resin').checked){sub+=prices.resin;bd.push({l:'軟性レジン',p:fmt(prices.resin)});}
+  if(document.getElementById('chk-thermo').checked){sub+=prices.thermo;bd.push({l:'サーモセンス2度打ち',p:fmt(prices.thermo)});}
+
+  // 1顎2床：左右に分けてそれぞれの欠損数を計算
+  function splitMissing(missingSet){
+    // index 0-7が左側(87654321)、index 8-15が右側(12345678)
+    const leftCount=[...missingSet].filter(i=>i<=7).length;
+    const rightCount=[...missingSet].filter(i=>i>=8).length;
+    return {leftCount, rightCount};
+  }
+
+  // 通常1ケース分の処理
+  function processOneBed(jawName, missingCount, rankEl, suffix=''){
+    if(missingCount<=0){if(!suffix)rankEl.style.display='none';return;}
+    const tier=getTier(missingCount);
+    const label=jawName+(suffix?` ${suffix}`:'');
+    if(!tier){if(!suffix){rankEl.textContent='範囲外';rankEl.style.display='';}return;}
+    if(tier.isMetalCombined){
+      sub+=tier.flatPrice;bd.push({l:`${label} 金属床（${tier.flatLabel}）`,p:fmt(tier.flatPrice)});
+      if(tier.metalTier){sub+=tier.metalTier.haretsu;bd.push({l:`${label} 配列（${tier.metalTier.label}）`,p:fmt(tier.metalTier.haretsu)});sub+=tier.metalTier.shiage;bd.push({l:`${label} 仕上げ（${tier.metalTier.label}）`,p:fmt(tier.metalTier.shiage)});if(!suffix)rankEl.textContent=tier.metalTier.label;}
+      if(!suffix)rankEl.style.display='';
+    } else {
+      sub+=tier.haretsu;bd.push({l:`${label} 排列（${tier.label}）`,p:fmt(tier.haretsu)});
+      if(tier.shiage>0){sub+=tier.shiage;bd.push({l:`${label} 仕上げ（${tier.label}）`,p:fmt(tier.shiage)});}
+      if(tier.isMetalNonclasp){const ap=tier.mnIsFull?metalPrices.full:metalPrices.partial;sub+=ap;bd.push({l:`${label} 金属床（${tier.mnIsFull?'総義歯':'パーシャル'}）`,p:fmt(ap)});}
+      if(!suffix){rankEl.textContent=tier.label;rankEl.style.display='';}
+    }
+  }
+
+  // 上顎処理
+  if(useU && missingU>0){
+    const rankEl=document.getElementById('upper-rank');
+    if(twobedU){
+      // 1顎2床：左右分けて2ケース請求
+      const {leftCount, rightCount}=splitMissing(missingUpper);
+      rankEl.textContent='1顎2床';rankEl.style.display='';
+      processOneBed('上顎', leftCount, rankEl, '76側');
+      processOneBed('上顎', rightCount, rankEl, '67側');
+    } else {
+      processOneBed('上顎', missingU, document.getElementById('upper-rank'));
+    }
+  } else if(useU){
+    document.getElementById('upper-rank').style.display='none';
+  }
+
+  // 下顎処理
+  if(useL && missingL>0){
+    const rankEl=document.getElementById('lower-rank');
+    if(twobedL){
+      // 1顎2床：左右分けて2ケース請求
+      const {leftCount, rightCount}=splitMissing(missingLower);
+      rankEl.textContent='1顎2床';rankEl.style.display='';
+      processOneBed('下顎', leftCount, rankEl, '76側');
+      processOneBed('下顎', rightCount, rankEl, '67側');
+    } else {
+      processOneBed('下顎', missingL, document.getElementById('lower-rank'));
+    }
+  } else if(useL){
+    document.getElementById('lower-rank').style.display='none';
+  }
+
+  const isMetalType=(currentType==='metal_nonclasp'||currentType==='metal');
+  let mc=0;
+  if(isMetalType){
+    // 上顎メタルアップ
+    let mcU=0;
+    if(useU && missingU>0){
+      if(twobedU){
+        mcU=6; // 1顎2床：左右各3歯=6歯固定
+      } else {
+        const hasLeftU=[...missingUpper].some(i=>i<=7);
+        const hasRightU=[...missingUpper].some(i=>i>=8);
+        if(hasLeftU&&hasRightU){ mcU=14-missingU; } else { mcU=3; }
+      }
+    }
+    // 下顎メタルアップ
+    let mcL=0;
+    if(useL && missingL>0){
+      if(twobedL){
+        mcL=6; // 1顎2床：左右各3歯=6歯固定
+      } else {
+        const hasLeftL=[...missingLower].some(i=>i<=7);
+        const hasRightL=[...missingLower].some(i=>i>=8);
+        if(hasLeftL&&hasRightL){ mcL=14-missingL; } else { mcL=3; }
+      }
+    }
+    mc=mcU+mcL;
+    document.getElementById('metalup-manual').style.display='none';
+    document.getElementById('metalup-auto').style.display='';
+    document.getElementById('metalup-auto').textContent=`${mc}歯（自動）`;
+  } else {
+    document.getElementById('metalup-manual').style.display='';
+    document.getElementById('metalup-auto').style.display='none';
+    mc=parseInt(document.getElementById('opt-metalup').value)||0;
+  }
+
+  const rc=parseInt(document.getElementById('opt-rest').value)||0;
+  if(rc>0){const p=rc*prices.rest;sub+=p;bd.push({l:`レスト ×${rc}`,p:fmt(p)});}
+  if(mc>0){const p=mc*prices.metalup;sub+=p;bd.push({l:`メタルアップ ×${mc}歯`,p:fmt(p)});}
+  CLASP_DATA.forEach(r=>r.forEach(c=>{ if(claspCounts[c.name]>0){ const p=c.price*claspCounts[c.name]; sub+=p; bd.push({l:`${c.name} ×${claspCounts[c.name]}`,p:fmt(p)}); } }));
+  const tax=Math.round(sub*0.1);
+  document.getElementById('subtotal').textContent=fmt(sub);
+  document.getElementById('tax').textContent=fmt(tax);
+  document.getElementById('grand').textContent=fmt(sub+tax);
+  document.getElementById('breakdown').innerHTML=bd.map(r=>`<div class="bd-row"><span>${r.l}</span><span>${r.p}</span></div>`).join('');
+  lastSubtotal=sub;
+  lastTax=tax;
+  lastTotal=sub+tax;
+  lastMetalupCount=mc;
+  lastBreakdown=bd;
+}
+function renderClaspGrid(){
+  const g=document.getElementById('clasp-grid'); g.innerHTML='';
+  CLASP_DATA.forEach(row=>row.forEach(c=>{
+    if(!c.name)return;
+    const cell=document.createElement('div'); cell.className='clasp-cell';
+    cell.innerHTML=`<div><div style="font-size:12px">${c.name}</div><div style="font-size:10px;color:#8a96b0">${fmt(c.price)}</div></div><div class="mini-counter"><button class="cbtn" onclick="adjClasp('${c.name}',-1)">−</button><span class="cval" id="cv-${c.name.replace(/[^\w]/g,'_')}">${claspCounts[c.name]||0}</span><button class="cbtn" onclick="adjClasp('${c.name}',1)">＋</button></div>`;
+    g.appendChild(cell);
+  }));
+}
+window.adjClasp=function(name,d){ claspCounts[name]=Math.max(0,(claspCounts[name]||0)+d); renderClaspGrid(); calc(); };
+function adjOpt(id,d){ const el=document.getElementById('opt-'+id); el.value=Math.max(0,(parseInt(el.value)||0)+d); calc(); }
+function toggleClasp(){ document.getElementById('clasp-body').classList.toggle('open'); }
+function doPrint(){ const now=new Date(); const clinic=document.getElementById('clinicSel'); document.getElementById('print-date').textContent=`${now.toLocaleDateString()} ${clinic.value?clinic.options[clinic.selectedIndex].text:''}`; window.print(); }
+function doReset(){ if(confirm('リセットしますか？')){ window.QuoteRelayCore.clearCurrentQuoteMeta(sessionStorage); location.reload(); } }
+
+function selectedRelayItems(){
+  const q=(name)=>Math.max(0,Number(claspCounts[name]||0));
+  return {
+    posteriorRetention:document.getElementById('chk-koki').checked?1:0,
+    softResin:document.getElementById('chk-resin').checked?1:0,
+    thermoDouble:document.getElementById('chk-thermo').checked?1:0,
+    restCount:Math.max(0,parseInt(document.getElementById('opt-rest').value)||0),
+    metalupCount:lastMetalupCount+q('メタルアップ(1歯)'),
+    castClasp:q('キャスト鉤'), wireClasp:q('ワイヤー鉤'), twinClasp:q('双子鉤'),
+    wireTwinClasp:q('ワイヤー双歯鉤'), roachIBar:q('ローチIバー鉤'), pgaWireClasp:q('PGAワイヤー鉤'),
+    roachTBar:q('ローチTバー鉤'), pgaWireTwinClasp:q('PGAワイヤー双歯鉤'),
+    combinationClasp:q('コンビネーション鉤'), reinforcementPlate:q('補強床'), ringClasp:q('リング鉤'),
+    restHook:q('レスト・フック'), backActionClasp:q('バックアクション鉤'), hairpinClasp:q('ヘアピン鉤')
+  };
+}
+function buildRelayInput(){
+  const clinic=document.getElementById('clinicSel');
+  const clinicName=clinic.value?clinic.options[clinic.selectedIndex].text.trim():'';
+  if(!clinicName) throw new Error('医院を選択してください');
+  return {
+    clinicName,
+    caseNumber:document.getElementById('caseNumber').value.trim(),
+    dentureType:currentType,
+    jaws:{upper:document.getElementById('chk-upper').checked,lower:document.getElementById('chk-lower').checked},
+    missingTeeth:{upper:[...missingUpper],lower:[...missingLower]},
+    twoDentures:{upper:document.getElementById('chk-twobed-upper').checked,lower:document.getElementById('chk-twobed-lower').checked},
+    selectedItems:selectedRelayItems(), subtotal:lastSubtotal, tax:lastTax, total:lastTotal
+  };
+}
+
+function enableCloudSend(transport){
+  if(!transport||typeof transport.send!=='function') throw new Error('invalid cloud transport');
+  cloudTransport=transport;
+  if(!sendLocked){
+    const btn=document.getElementById('btn-send');
+    btn.disabled=false;
+    btn.textContent='☁️ 見積もりを送信';
+  }
+}
+function disableCloudSend(){
+  cloudTransport=null;
+  const btn=document.getElementById('btn-send');
+  btn.disabled=true;
+  btn.textContent='⚠️ 送信接続エラー';
+}
+async function handleSend(){
+  if(sendLocked) return;
+  if(!cloudTransport){ showToast('⚠️ 送信接続を確認してください'); return; }
+  let input;
+  try{ input=buildRelayInput(); }
+  catch(error){ showToast('⚠️ '+error.message); return; }
+  const btn=document.getElementById('btn-send');
+  btn.disabled=true; btn.textContent='☁️ 送信中…';
+  try{
+    const result=await cloudTransport.send(input,quoteMeta);
+    if(!result||result.verified!==true) throw new Error('send verification failed');
+    sendLocked=true; btn.textContent='✅ 送信済み';
+    showToast('✅ 見積もりを送信しました');
+  }catch(_){
+    btn.disabled=false; btn.textContent='☁️ 見積もりを送信';
+    showToast('⚠️ 送信できませんでした。通信を確認して再試行してください。');
+  }
+}
+window.enableCloudSend=enableCloudSend;
+window.disableCloudSend=disableCloudSend;
+window.handleSend=handleSend;
+
+// Firebase準備完了時の処理
+renderQuoteMeta(); loadClinicData(); setType('nonclasp'); onJawChange(); renderClaspGrid();
+// Enterキーで医院登録
+document.getElementById('onboard-clinic').addEventListener('keydown',e=>{ if(e.key==='Enter') registerClinic(); });
+// 医院選択時にステータスリスナーを開始（医院切り替え・再起動後の選択に対応）
+</script>
+<script type="module">
+import { createFirebaseRelayTransport } from './quote-relay-firebase-browser.js';
+const firebaseConfig=Object.freeze({
+  apiKey:'AIzaSyA9WQSEs7vHWG-xyMfowrhMg4aKnLdqnbU',
+  authDomain:'koyoshi-mitsumori.firebaseapp.com',
+  projectId:'koyoshi-mitsumori',
+  messagingSenderId:'493354057525',
+  appId:'1:493354057525:web:654d9fd4ccdd20e1e3567c'
+});
+try{
+  window.enableCloudSend(createFirebaseRelayTransport(firebaseConfig));
+}catch(error){
+  console.error('Firebase relay initialization failed',error);
+  window.disableCloudSend();
+}
+</script>
+</body>
+</html>
